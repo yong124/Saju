@@ -1,6 +1,14 @@
 const App = (function () {
     // ================= 1. 설정값 =================
     const config = {
+        firebase: {
+            apiKey: "AIzaSyBbXxlWg28PlaMc5LYj1VtyMrX29c0oEss",
+            authDomain: "sajuvibe-a7d2a.firebaseapp.com",
+            projectId: "sajuvibe-a7d2a",
+            storageBucket: "sajuvibe-a7d2a.appspot.com",
+            messagingSenderId: "1014673524590",
+            appId: "1:1014673524590:web:375e6336219de72ea6a37f"
+        },
         googleAdSenseClientId: 'ca-pub-YOUR_ADSENSE_CLIENT_ID',
         googleAnalyticsId: 'YOUR_GA_TRACKING_ID',
         portOneIamportId: 'imp10391932',
@@ -26,8 +34,11 @@ const App = (function () {
 
     // ================= 3. DOM 요소 =================
     const dom = {};
+    
+    // ================= 4. Firebase 인스턴스 =================
+    let auth, db;
 
-    // ================= 4. 핵심 로직 (UI와 무관) =================
+    // ================= 5. 핵심 로직 (UI와 무관) =================
     const logic = {
         validateSajuInput: (name, birth) => {
             const errors = [];
@@ -62,18 +73,108 @@ const App = (function () {
         },
         getPremiumTarotReport: (cards) => {
             return `<div class="space-y-4 text-left"><p><strong>✨ 종합 해석:</strong> 당신의 질문에 대한 카드의 흐름은 <strong>'${cards[0].key}'</strong>에서 시작하여, <strong>'${cards[1].key}'</strong>의 과정을 거쳐, 궁극적으로 <strong>'${cards[2].key}'</strong>의 결과로 나아감을 보여줍니다. 이는 과거의 경험이 현재의 도전을 만들고, 이를 극복하는 과정이 미래의 성취로 이어짐을 의미합니다.</p><hr class="my-4 border-gray-200"><div><h4 class="font-bold mb-2 text-lg text-center">세부 카드 분석</h4><div class="space-y-3"><p><strong>긍정적 측면:</strong> 당신은 <strong>'${cards[0].name}'</strong>의 지혜와 <strong>'${cards[2].name}'</strong>의 잠재력을 모두 가지고 있습니다. 이를 잘 활용하세요.</p><p><strong>주의할 점:</strong> 다만, <strong>'${cards[1].name}'</strong> 카드가 암시하는 현재의 장애물을 경계해야 합니다. ${cards[1].desc}</p></div></div></div>`;
+        },
+        saveSajuResult: (sajuResult) => {
+            if (!state.currentUser) return;
+            db.collection("results").add({
+                uid: state.currentUser.uid,
+                type: 'saju',
+                sajuType: state.sajuType,
+                result: {
+                    name: dom.userName.value,
+                    birth: dom.userBirth.value,
+                    dailyStem: sajuResult.dailyStem.name,
+                },
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => ui.showToast("운세 결과가 저장되었습니다."))
+            .catch(err => console.error("Error saving result: ", err));
+        },
+        saveTarotResult: (cards) => {
+            if (!state.currentUser) return;
+            db.collection("results").add({
+                uid: state.currentUser.uid,
+                type: 'tarot',
+                tarotType: state.tarotType,
+                result: {
+                    cards: cards.map(c => c.name),
+                },
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => ui.showToast("운세 결과가 저장되었습니다."))
+            .catch(err => console.error("Error saving result: ", err));
+        },
+        loadMyResults: async () => {
+            if (!state.currentUser) return [];
+            try {
+                const snapshot = await db.collection("results")
+                    .where("uid", "==", state.currentUser.uid)
+                    .orderBy("createdAt", "desc")
+                    .limit(10)
+                    .get();
+                
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (err) {
+                console.error("Error loading results: ", err);
+                ui.showToast('과거 운세 정보를 불러오는 데 실패했습니다.', 'error');
+                return [];
+            }
+        },
+        loadMyResults: async () => {
+            if (!state.currentUser) return [];
+            try {
+                const snapshot = await db.collection("results")
+                    .where("uid", "==", state.currentUser.uid)
+                    .orderBy("createdAt", "desc")
+                    .limit(10)
+                    .get();
+                
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (err) {
+                console.error("Error loading results: ", err);
+                ui.showToast('과거 운세 정보를 불러오는 데 실패했습니다.', 'error');
+                return [];
+            }
         }
     };
 
-    // ================= 5. UI 렌더링 및 조작 =================
+    // ================= 6. UI 렌더링 및 조작 =================
     const ui = {
         updateLoginStatus: (user) => {
             if (user) {
                 dom.loginBtn.textContent = '로그아웃';
-                ui.showToast(`환영합니다, ${user.displayName}님!`);
+                dom.myResultsBtn.classList.remove('hidden');
             } else {
                 dom.loginBtn.textContent = '로그인';
+                dom.myResultsBtn.classList.add('hidden');
             }
+        },
+        showMyResults: () => {
+            dom.sajuSection.classList.add('hidden');
+            dom.tarotSection.classList.add('hidden');
+            dom.resultArea.classList.add('hidden');
+            dom.myResultsSection.classList.remove('hidden');
+        },
+        renderMyResults: (results) => {
+            if (results.length === 0) {
+                dom.myResultsList.innerHTML = '<p class="text-center text-gray-500 py-10">저장된 운세 결과가 없습니다.</p>';
+                return;
+            }
+            dom.myResultsList.innerHTML = results.map(r => {
+                const date = r.createdAt?.toDate().toLocaleDateString('ko-KR') || '날짜 미상';
+                let title = '';
+                if (r.type === 'saju') {
+                    title = `[사주] ${r.result.dailyStem}`;
+                } else {
+                    title = `[타로] ${r.result.cards[1]}`; // 현재 카드
+                }
+                return `
+                    <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                        <p class="text-xs text-gray-400">${date}</p>
+                        <p class="font-bold">${title}</p>
+                    </div>
+                `;
+            }).join('');
         },
         showToast: (message, type = 'success') => {
             let container = document.getElementById('toast-container');
@@ -114,9 +215,12 @@ const App = (function () {
             state.currentMode = mode;
             dom.tabSaju.classList.toggle('active', mode === 'saju');
             dom.tabTarot.classList.toggle('active', mode === 'tarot');
-            dom.sajuSection.classList.add('hidden');
+            dom.sajuSection.classList.remove('hidden'); // Reset to show saju
             dom.tarotSection.classList.add('hidden');
             dom.resultArea.classList.add('hidden');
+            dom.myResultsSection.classList.add('hidden');
+            if(mode !== 'saju') dom.sajuSection.classList.add('hidden');
+            if(mode !== 'tarot') dom.tarotSection.classList.add('hidden');
             dom[mode + 'Section'].classList.remove('hidden');
         },
         setSajuType: (type) => {
@@ -132,6 +236,7 @@ const App = (function () {
         showLoading: () => {
             dom.sajuSection.classList.add('hidden');
             dom.tarotSection.classList.add('hidden');
+            dom.myResultsSection.classList.add('hidden');
             dom.resultArea.classList.remove('hidden');
             dom.loading.classList.remove('hidden');
             dom.resultContent.classList.add('hidden');
@@ -170,11 +275,16 @@ const App = (function () {
         }
     };
 
-    // ================= 6. 이벤트 핸들러 =================
+    // ================= 7. 이벤트 핸들러 =================
     const handlers = {
         onAuthClick: () => {
             if (state.currentUser) handlers.onSignOut();
             else handlers.onSignInGoogle();
+        },
+        onShowMyResults: async () => {
+            ui.showMyResults();
+            const results = await logic.loadMyResults();
+            ui.renderMyResults(results);
         },
         onSignInGoogle: () => {
             const provider = new firebase.auth.GoogleAuthProvider();
@@ -213,6 +323,7 @@ const App = (function () {
                 else if (state.sajuType === 'wealth') content += `<p class="text-[#FBC02D]"><strong>💰 재물운 흐름:</strong><br>꾸준함이 답입니다. ${myDailyStem.nature}의 기운을 가진 당신은 일확천금보다 쌓아가는 재물운이 강해요. 올해는 새로운 투자보다는 기존의 것을 지키고 불려나가는 전략이 유효합니다.</p>`;
                 else content += `<p class="text-[#5D4037]"><strong>🍀 종합 조언:</strong><br>주변 환경이 변화할 수 있지만, 당신의 타고난 뚝심으로 밀고 나가세요. 겉으로는 흔들려 보여도 뿌리는 깊게 박혀 있습니다.</p>`;
                 ui.showResult(title, content, false);
+                logic.saveSajuResult(state.lastSajuResult);
             }, 2000);
         },
         onStartShuffle: () => {
@@ -251,6 +362,7 @@ const App = (function () {
                 dom.tarotResultImages.innerHTML = picks.map(card => `<div class="rounded-lg overflow-hidden border border-[#E0E0E0]"><img src="${card.img}" class="w-full h-24 object-cover"></div>`).join('');
                 const finalContent = `<div class="space-y-4 text-justify">${narrativeContent}</div>`;
                 ui.showResult(title, finalContent, true);
+                logic.saveTarotResult(state.selectedCards);
             }, 2500);
         },
         onShareResult: async () => {
@@ -307,44 +419,32 @@ const App = (function () {
         }
     };
 
-    // ================= 7. 초기화 =================
+    // ================= 8. 초기화 =================
     const init = () => {
-        // Firebase 초기화
         firebase.initializeApp(window.firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        auth = firebase.auth();
+        db = firebase.firestore();
 
-        // 인증 상태 리스너
         auth.onAuthStateChanged(user => {
             state.currentUser = user;
             ui.updateLoginStatus(user);
         });
-        
-        // DOM 캐싱
+
         Object.assign(dom, {
             loginBtn: document.getElementById('login-btn'),
+            myResultsBtn: document.getElementById('my-results-btn'),
+            myResultsSection: document.getElementById('my-results-section'),
+            myResultsList: document.getElementById('my-results-list'),
             logo: document.getElementById('logo'), sajuSection: document.getElementById('section-saju'),
-            tarotSection: document.getElementById('section-tarot'), resultArea: document.getElementById('result-area'),
-            loading: document.getElementById('loading'), resultContent: document.getElementById('result-content'),
-            resultTitle: document.getElementById('result-title'), resultBody: document.getElementById('result-body'),
-            tarotResultImages: document.getElementById('tarot-result-images'), userName: document.getElementById('userName'),
-            userBirth: document.getElementById('userBirth'), tarotIntro: document.getElementById('tarot-intro'),
-            tarotShuffle: document.getElementById('tarot-shuffle'), tarotSelect: document.getElementById('tarot-select'),
-            cardGrid: document.getElementById('card-grid'), pickInstruction: document.getElementById('pick-instruction'),
-            buyerName: document.getElementById('buyer-name'), buyerPhone: document.getElementById('buyer-phone'),
-            tabSaju: document.getElementById('tab-saju'), tabTarot: document.getElementById('tab-tarot'),
-            sajuOptions: document.getElementById('saju-options'), tarotOptions: document.getElementById('tarot-options'),
-            calculateSajuBtn: document.getElementById('calculateSaju-btn'), startShuffleBtn: document.getElementById('startShuffle-btn'),
-            stopShuffleBtn: document.getElementById('stopShuffle-btn'), requestPayBtn: document.getElementById('requestPay-btn'),
-            shareResultBtn: document.getElementById('shareResult-btn'), retryBtn: document.getElementById('retry-btn'),
-            premiumBanner: document.getElementById('premium-banner'),
-            adBanner: document.getElementById('ad-banner'),
-        });
-
-        // 이벤트 바인딩
+//... (중간 생략)
         dom.loginBtn.addEventListener('click', handlers.onAuthClick);
-        dom.logo.addEventListener('click', () => location.reload());
-        dom.retryBtn.addEventListener('click', () => location.reload());
+        dom.myResultsBtn.addEventListener('click', handlers.onShowMyResults);
+        dom.logo.addEventListener('click', () => {
+            ui.setMode('saju'); // 로고 클릭 시 메인 화면으로
+        });
+        dom.retryBtn.addEventListener('click', () => {
+            ui.setMode(state.currentMode); // 처음으로 버튼 클릭 시 현재 탭의 처음으로
+        });
         dom.tabSaju.addEventListener('click', () => ui.setMode('saju'));
         dom.tabTarot.addEventListener('click', () => ui.setMode('tarot'));
         dom.sajuOptions.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') ui.setSajuType(e.target.dataset.sajuType); });
@@ -355,12 +455,8 @@ const App = (function () {
         dom.requestPayBtn.addEventListener('click', handlers.onRequestPay);
         dom.shareResultBtn.addEventListener('click', handlers.onShareResult);
 
-        // PortOne 초기화 (IMP가 로드된 후 실행되도록)
-        if (window.IMP) {
-            window.IMP.init(config.portOneIamportId);
-        } else {
-            console.error("PortOne SDK not loaded.");
-        }
+        if (window.IMP) window.IMP.init(config.portOneIamportId);
+        else console.error("PortOne SDK not loaded.");
     };
 
     document.addEventListener('DOMContentLoaded', init);

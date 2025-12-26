@@ -1,6 +1,3 @@
-# Ignore sensitive files
-config.js
-
-# Ignore OS-specific files
+# OS-specific files
 .DS_Store
 Thumbs.db
