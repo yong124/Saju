@@ -10,21 +10,23 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 // Firebase Admin SDK 초기화 (이미 초기화되지 않은 경우)
 if (!admin.apps.length) {
   try {
-    const firebaseAdminConfig = process.env.FIREBASE_ADMIN_SDK_CONFIG;
-    if (!firebaseAdminConfig) {
-      throw new Error("환경 변수 FIREBASE_ADMIN_SDK_CONFIG가 설정되지 않았습니다.");
+    const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+
+    if (!projectId || !clientEmail || !privateKey) {
+      throw new Error("필수 Firebase Admin SDK 환경 변수(PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY)가 설정되지 않았습니다.");
     }
-    const serviceAccount = JSON.parse(firebaseAdminConfig);
+    
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+      credential: admin.credential.cert({
+        projectId: projectId,
+        clientEmail: clientEmail,
+        privateKey: privateKey.replace(/\\n/g, '\n'), // 줄바꿈 문자를 올바르게 변환
+      })
     });
   } catch (error) {
     console.error("Firebase Admin SDK 초기화 실패:", error);
-    if (error instanceof SyntaxError) {
-      console.error("FIREBASE_ADMIN_SDK_CONFIG 환경 변수가 유효한 JSON 형식이 아닙니다. 줄바꿈 문자를 이스케이프했는지 확인해주세요.");
-    }
-    // 초기화 실패 시 db 객체 접근 방지를 위해 db를 null로 설정하거나 다른 처리
-    // 여기서는 throw하여 함수 실행 중단
     throw new Error("Firebase Admin SDK 초기화 오류: " + error.message);
   }
 }
