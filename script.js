@@ -1,14 +1,6 @@
 const App = (function () {
     // ================= 1. 설정값 =================
     const config = {
-        firebase: {
-            apiKey: "AIzaSyBbXxlWg28PlaMc5LYj1VtyMrX29c0oEss",
-            authDomain: "sajuvibe-a7d2a.firebaseapp.com",
-            projectId: "sajuvibe-a7d2a",
-            storageBucket: "sajuvibe-a7d2a.appspot.com",
-            messagingSenderId: "1014673524590",
-            appId: "1:1014673524590:web:375e6336219de72ea6a37f"
-        },
         googleAdSenseClientId: 'ca-pub-YOUR_ADSENSE_CLIENT_ID',
         googleAnalyticsId: 'YOUR_GA_TRACKING_ID',
         portOneIamportId: 'imp10391932',
@@ -128,6 +120,7 @@ const App = (function () {
             if (user) {
                 dom.loginBtn.textContent = '로그아웃';
                 dom.myResultsBtn.classList.remove('hidden');
+                ui.showToast(`환영합니다, ${user.displayName}님!`);
             } else {
                 dom.loginBtn.textContent = '로그인';
                 dom.myResultsBtn.classList.add('hidden');
@@ -294,7 +287,7 @@ const App = (function () {
                 return;
             }
             ui.showLoading();
-            gtag('event', 'click_saju_result', { 'event_category': 'Saju', 'event_label': state.sajuType });
+            if (window.gtag) gtag('event', 'click_saju_result', { 'event_category': 'Saju', 'event_label': state.sajuType });
             const userBirthDate = new Date(birth);
             const myDailyStem = logic.getDailyStem(userBirthDate);
             state.lastSajuResult = { dailyStem: myDailyStem, birthDate: userBirthDate };
@@ -327,7 +320,7 @@ const App = (function () {
         },
         onAnalyzeTarot: () => {
             ui.showLoading();
-            gtag('event', 'click_tarot_result', { 'event_category': 'Tarot', 'event_label': state.tarotType });
+            if (window.gtag) gtag('event', 'click_tarot_result', { 'event_category': 'Tarot', 'event_label': state.tarotType });
             setTimeout(() => {
                 const picks = state.selectedCards;
                 let title = "당신의 흐름을 읽어보았습니다";
@@ -384,7 +377,7 @@ const App = (function () {
                 ui.showToast('구매자 이름을 입력해주세요.', 'error');
                 return;
             }
-            gtag('event', 'click_premium_report', { 'event_category': 'Monetization', 'event_label': state.currentMode });
+            if (window.gtag) gtag('event', 'click_premium_report', { 'event_category': 'Monetization', 'event_label': state.currentMode });
             IMP.request_pay({
                 pg: config.paymentPg, pay_method: config.paymentMethod, merchant_uid: "order_" + new Date().getTime(),
                 name: config.paymentProductName, amount: config.paymentAmount,
@@ -392,7 +385,7 @@ const App = (function () {
                 buyer_tel: dom.buyerPhone.value.trim(),
             }, (rsp) => {
                 if (rsp.success) {
-                    gtag('event', 'purchase', { 'transaction_id': rsp.imp_uid, 'value': config.paymentAmount, 'currency': 'KRW' });
+                    if (window.gtag) gtag('event', 'purchase', { 'transaction_id': rsp.imp_uid, 'value': config.paymentAmount, 'currency': 'KRW' });
                     ui.showPremiumReport();
                 } else {
                     ui.showToast(`결제에 실패했습니다: ${rsp.error_msg}`, 'error');
@@ -403,38 +396,57 @@ const App = (function () {
 
     // ================= 8. 초기화 =================
     const init = () => {
+        // Firebase 초기화
         firebase.initializeApp(window.firebaseConfig);
         auth = firebase.auth();
         db = firebase.firestore();
 
+        // 인증 상태 리스너
         auth.onAuthStateChanged(user => {
             state.currentUser = user;
+            if(!user) ui.showToast('로그아웃되었습니다.');
             ui.updateLoginStatus(user);
         });
 
+        // DOM 캐싱
         Object.assign(dom, {
             loginBtn: document.getElementById('login-btn'),
             myResultsBtn: document.getElementById('my-results-btn'),
             myResultsSection: document.getElementById('my-results-section'),
             myResultsList: document.getElementById('my-results-list'),
-            logo: document.getElementById('logo'), sajuSection: document.getElementById('section-saju'),
-            tarotSection: document.getElementById('section-tarot'), resultArea: document.getElementById('result-area'),
-            loading: document.getElementById('loading'), resultContent: document.getElementById('result-content'),
-            resultTitle: document.getElementById('result-title'), resultBody: document.getElementById('result-body'),
-            tarotResultImages: document.getElementById('tarot-result-images'), userName: document.getElementById('userName'),
-            userBirth: document.getElementById('userBirth'), tarotIntro: document.getElementById('tarot-intro'),
-            tarotShuffle: document.getElementById('tarot-shuffle'), tarotSelect: document.getElementById('tarot-select'),
-            cardGrid: document.getElementById('card-grid'), pickInstruction: document.getElementById('pick-instruction'),
-            buyerName: document.getElementById('buyer-name'), buyerPhone: document.getElementById('buyer-phone'),
-            tabSaju: document.getElementById('tab-saju'), tabTarot: document.getElementById('tab-tarot'),
-            sajuOptions: document.getElementById('saju-options'), tarotOptions: document.getElementById('tarot-options'),
-            calculateSajuBtn: document.getElementById('calculateSaju-btn'), startShuffleBtn: document.getElementById('startShuffle-btn'),
-            stopShuffleBtn: document.getElementById('stopShuffle-btn'), requestPayBtn: document.getElementById('requestPay-btn'),
-            shareResultBtn: document.getElementById('shareResult-btn'), retryBtn: document.getElementById('retry-btn'),
+            logo: document.getElementById('logo'), 
+            sajuSection: document.getElementById('section-saju'),
+            tarotSection: document.getElementById('section-tarot'), 
+            resultArea: document.getElementById('result-area'),
+            loading: document.getElementById('loading'), 
+            resultContent: document.getElementById('result-content'),
+            resultTitle: document.getElementById('result-title'), 
+            resultBody: document.getElementById('result-body'),
+            tarotResultImages: document.getElementById('tarot-result-images'), 
+            userName: document.getElementById('userName'),
+            userBirth: document.getElementById('userBirth'), 
+            tarotIntro: document.getElementById('tarot-intro'),
+            tarotShuffle: document.getElementById('tarot-shuffle'), 
+            tarotSelect: document.getElementById('tarot-select'),
+            cardGrid: document.getElementById('card-grid'), 
+            pickInstruction: document.getElementById('pick-instruction'),
+            buyerName: document.getElementById('buyer-name'), 
+            buyerPhone: document.getElementById('buyer-phone'),
+            tabSaju: document.getElementById('tab-saju'), 
+            tabTarot: document.getElementById('tab-tarot'),
+            sajuOptions: document.getElementById('saju-options'), 
+            tarotOptions: document.getElementById('tarot-options'),
+            calculateSajuBtn: document.getElementById('calculateSaju-btn'), 
+            startShuffleBtn: document.getElementById('startShuffle-btn'),
+            stopShuffleBtn: document.getElementById('stopShuffle-btn'), 
+            requestPayBtn: document.getElementById('requestPay-btn'),
+            shareResultBtn: document.getElementById('shareResult-btn'), 
+            retryBtn: document.getElementById('retry-btn'),
             premiumBanner: document.getElementById('premium-banner'),
             adBanner: document.getElementById('ad-banner'),
         });
 
+        // 이벤트 바인딩
         dom.loginBtn.addEventListener('click', handlers.onAuthClick);
         dom.myResultsBtn.addEventListener('click', handlers.onShowMyResults);
         dom.logo.addEventListener('click', () => ui.setMode('saju'));
@@ -449,10 +461,16 @@ const App = (function () {
         dom.requestPayBtn.addEventListener('click', handlers.onRequestPay);
         dom.shareResultBtn.addEventListener('click', handlers.onShareResult);
 
-        if (window.IMP) window.IMP.init(config.portOneIamportId);
-        else console.error("PortOne SDK not loaded.");
+        // PortOne 초기화
+        if (window.IMP) {
+            window.IMP.init(config.portOneIamportId);
+        } else {
+            console.error("PortOne SDK not loaded.");
+        }
     };
-
+    
+    // DOM 로드가 완료된 후 App 초기화 실행
     document.addEventListener('DOMContentLoaded', init);
+
     return {};
 })();

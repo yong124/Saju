@@ -9,19 +9,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    
     <!-- PortOne (I'mport) Payment SDK -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js" type="text/javascript"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- App Scripts -->
+    <script src="config.js"></script>
+    <script src="data.js"></script>
+    <script src="script.js" defer></script>
 </head>
 <body class="min-h-screen flex flex-col items-center">
 
     <nav class="w-full py-4 px-6 flex justify-between items-center bg-white/80 backdrop-blur sticky top-0 z-50 border-b border-[#F0E6D2]">
-        <div class="font-title text-2xl text-[#FF5E5E] tracking-wide cursor-pointer flex items-center">
+        <div id="logo" class="font-title text-2xl text-[#FF5E5E] tracking-wide cursor-pointer flex items-center">
             <i class="fa-solid fa-cookie-bite mr-2 text-[#FFD950]"></i>Vibe Saju
         </div>
-        <button id="login-btn" class="bg-white text-sm text-[#FF5E5E] font-bold py-2 px-4 rounded-full border-2 border-[#FF5E5E] hover:bg-[#FFF0F0] transition">
-            로그인
-        </button>
+        <div class="flex items-center gap-2">
+            <button id="my-results-btn" class="hidden bg-white text-sm text-gray-600 font-bold py-2 px-4 rounded-full border-2 border-gray-300 hover:bg-gray-100 transition">
+                내 운세
+            </button>
+            <button id="login-btn" class="bg-white text-sm text-[#FF5E5E] font-bold py-2 px-4 rounded-full border-2 border-[#FF5E5E] hover:bg-[#FFF0F0] transition">
+                로그인
+            </button>
+        </div>
     </nav>
 
     <main class="w-full max-w-md px-4 sm:px-5 pt-8 pb-32">
@@ -109,7 +125,7 @@
             </div>
         </section>
 
-        <div id="result-area" class="hidden mt-6 fade-in w-full">
+        <section id="result-area" class="hidden mt-6 fade-in w-full">
             <div id="loading" class="py-20 flex flex-col items-center">
                 <div class="w-12 h-12 border-4 border-[#F0E6D2] border-t-[#FF5E5E] rounded-full spin mb-6"></div>
                 <p class="font-title text-xl text-[#8D6E63]">AI가 운명을 분석 중입니다...</p>
@@ -142,7 +158,17 @@
                     <div id="ad-banner" class="mt-6 w-full h-24 bg-gray-200 flex items-center justify-center text-sm text-gray-500 rounded-lg">(광고 영역)</div>
                 </div>
             </div>
-        </div>
+        </section>
+        
+        <section id="my-results-section" class="hidden space-y-6 fade-in">
+            <header class="text-center">
+                <h2 class="font-title text-3xl text-[#4A321F]">나의 운세 기록</h2>
+            </header>
+            <div id="my-results-list" class="space-y-4">
+                <p class="text-center text-gray-500 py-10">저장된 운세 결과가 없습니다.</p>
+            </div>
+        </section>
+
     </main>
 
     <footer class="w-full py-8 text-center text-[#BCAAA4] text-[10px] bg-white border-t border-[#F0E6D2]">
@@ -150,13 +176,5 @@
         <p>&copy; 2025 Vibe Saju. All rights reserved.</p>
     </footer>
 
-    <script src="config.js"></script>
-    <script src="data.js"></script>
-    <script src="script.js"></script>
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </body>
 </html>
