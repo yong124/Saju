@@ -2,17 +2,30 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const admin = require('firebase-admin');
 
+// 로컬 개발 환경에서만 .env 파일 로드
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  require('dotenv').config();
+}
+
 // Firebase Admin SDK 초기화 (이미 초기화되지 않은 경우)
 if (!admin.apps.length) {
   try {
-    // Vercel 환경 변수에서 서비스 계정 키를 가져옵니다.
-    // 이는 JSON 문자열 형태여야 합니다.
-    const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG);
+    const firebaseAdminConfig = process.env.FIREBASE_ADMIN_SDK_CONFIG;
+    if (!firebaseAdminConfig) {
+      throw new Error("환경 변수 FIREBASE_ADMIN_SDK_CONFIG가 설정되지 않았습니다.");
+    }
+    const serviceAccount = JSON.parse(firebaseAdminConfig);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
   } catch (error) {
     console.error("Firebase Admin SDK 초기화 실패:", error);
+    if (error instanceof SyntaxError) {
+      console.error("FIREBASE_ADMIN_SDK_CONFIG 환경 변수가 유효한 JSON 형식이 아닙니다. 줄바꿈 문자를 이스케이프했는지 확인해주세요.");
+    }
+    // 초기화 실패 시 db 객체 접근 방지를 위해 db를 null로 설정하거나 다른 처리
+    // 여기서는 throw하여 함수 실행 중단
+    throw new Error("Firebase Admin SDK 초기화 오류: " + error.message);
   }
 }
 
@@ -20,6 +33,7 @@ const db = admin.firestore();
 
 // Gemini API 키를 환경 변수에서 가져옵니다.
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// ... (나머지 코드 동일)
 
 // 요청 본문을 처리하는 기본 핸들러 함수
 module.exports = async (req, res) => {
