@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Saju | 귀엽고 깔끔한 운세</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- PortOne (I'mport) Payment SDK -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js" type="text/javascript"></script>
+</head>
+<body class="min-h-screen flex flex-col items-center">
+
+    <nav class="w-full py-4 px-6 flex justify-between items-center bg-white/80 backdrop-blur sticky top-0 z-50 border-b border-[#F0E6D2]">
+        <div class="font-title text-2xl text-[#FF5E5E] tracking-wide cursor-pointer flex items-center">
+            <i class="fa-solid fa-cookie-bite mr-2 text-[#FFD950]"></i>Vibe Saju
+        </div>
+        <button id="login-btn" class="bg-white text-sm text-[#FF5E5E] font-bold py-2 px-4 rounded-full border-2 border-[#FF5E5E] hover:bg-[#FFF0F0] transition">
+            로그인
+        </button>
+    </nav>
+
+    <main class="w-full max-w-md px-4 sm:px-5 pt-8 pb-32">
+        
+        <header class="text-center mb-10 fade-in">
+            <p class="text-xs text-[#A1887F] font-bold mb-2 tracking-widest bg-white inline-block px-3 py-1 rounded-full shadow-sm">AI 운세 & 타로 분석</p>
+            <h2 class="font-title text-3xl text-[#4A321F] leading-tight">
+                당신의 오늘을<br><span class="text-[#FF5E5E]">달콤하게</span> 구워드릴게요!
+            </h2>
+        </header>
+
+        <div class="main-tab mb-8 fade-in" style="animation-delay: 0.1s;">
+            <div id="tab-saju" class="tab-btn active text-lg" data-mode="saju">📜 정통 사주</div>
+            <div id="tab-tarot" class="tab-btn text-lg" data-mode="tarot">🔮 심층 타로</div>
+        </div>
+
+        <section id="section-saju" class="space-y-6 fade-in" style="animation-delay: 0.2s;">
+            <div id="saju-options" class="grid grid-cols-3 gap-2">
+                <button id="st-total" class="chip active py-3 text-sm" data-saju-type="total">🍀 종합 운세</button>
+                <button id="st-love" class="chip py-3 text-sm" data-saju-type="love">💕 연애/애정</button>
+                <button id="st-wealth" class="chip py-3 text-sm" data-saju-type="wealth">💰 재물/성공</button>
+            </div>
+            <div class="content-card p-6 space-y-5">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-[#8D6E63] mb-1.5 pl-1">이름 (Name)</label>
+                        <input type="text" id="userName" class="w-full input-field p-3 text-base" placeholder="이름을 입력하세요">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-[#8D6E63] mb-1.5 pl-1">생년월일</label>
+                            <input type="date" id="userBirth" class="w-full input-field p-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#8D6E63] mb-1.5 pl-1">태어난 시간</label>
+                            <select id="userTime" class="w-full input-field p-3 text-sm cursor-pointer">
+                                <option value="unknown">모름</option>
+                                <option value="ja">자시 (23:30~)</option>
+                                <option value="chuk">축시 (01:30~)</option>
+                                <option value="in">인시 (03:30~)</option>
+                                <option value="myo">묘시 (05:30~)</option>
+                                <option value="jin">진시 (07:30~)</option>
+                                <option value="sa">사시 (09:30~)</option>
+                                <option value="o">오시 (11:30~)</option>
+                                <option value="mi">미시 (13:30~)</option>
+                                <option value="shin">신시 (15:30~)</option>
+                                <option value="yu">유시 (17:30~)</option>
+                                <option value="sul">술시 (19:30~)</option>
+                                <option value="hae">해시 (21:30~)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <button id="calculateSaju-btn" class="w-full btn-action py-4 text-xl shadow-lg">사주 분석 시작하기 ✨</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-tarot" class="hidden space-y-6 fade-in" style="animation-delay: 0.2s;">
+            <div id="tarot-options" class="grid grid-cols-3 gap-2">
+                <button id="tt-situation" class="chip active py-3 text-sm" data-tarot-type="situation">🤔 현재 고민</button>
+                <button id="tt-choice" class="chip py-3 text-sm" data-tarot-type="choice">⚖️ 양자 택일</button>
+                <button id="tt-future" class="chip py-3 text-sm" data-tarot-type="future">🚀 미래 흐름</button>
+            </div>
+            <div id="tarot-intro" class="content-card p-8 text-center space-y-6">
+                <div class="w-24 h-24 bg-[#FFF0F0] rounded-full flex items-center justify-center mx-auto text-5xl shadow-inner">🔮</div>
+                <div>
+                    <h3 class="font-title text-2xl text-[#4A321F] mb-3">카드가 답을 줄 거예요</h3>
+                    <p class="text-sm text-[#8D6E63] leading-relaxed">마음속으로 고민을 깊게 생각한 뒤,<br>아래 버튼을 눌러 카드를 섞어주세요.</p>
+                </div>
+                <button id="startShuffle-btn" class="w-full btn-action py-4 text-xl">카드 섞기 시작!</button>
+            </div>
+            <div id="tarot-shuffle" class="hidden text-center py-12 space-y-10">
+                <div class="text-7xl animate-bounce">🔀</div>
+                <h3 class="font-title text-2xl text-[#FF5E5E]">카드를 섞는 중...</h3>
+                <p class="text-sm text-[#8D6E63]">충분히 섞였다고 생각되면 멈춰주세요!</p>
+                <button id="stopShuffle-btn" class="w-full btn-action py-4 text-xl">STOP!</button>
+            </div>
+            <div id="tarot-select" class="hidden space-y-4">
+                <div class="text-center p-3 bg-white rounded-xl border border-[#F0E6D2] shadow-sm">
+                    <p class="text-xs font-bold text-[#FF5E5E]" id="pick-instruction">👇 순서대로 3장을 뽑아주세요</p>
+                </div>
+                <div class="grid grid-cols-3 gap-3" id="card-grid"></div>
+            </div>
+        </section>
+
+        <div id="result-area" class="hidden mt-6 fade-in w-full">
+            <div id="loading" class="py-20 flex flex-col items-center">
+                <div class="w-12 h-12 border-4 border-[#F0E6D2] border-t-[#FF5E5E] rounded-full spin mb-6"></div>
+                <p class="font-title text-xl text-[#8D6E63]">AI가 운명을 분석 중입니다...</p>
+                <p class="text-xs text-[#A1887F] mt-2">잠시만 기다려주세요 🍪</p>
+            </div>
+            <div id="result-content" class="hidden content-card p-0 relative overflow-hidden">
+                <div class="bg-[#FF5E5E] p-4 text-center">
+                    <span class="bg-white/20 text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">Analysis Complete</span>
+                    <h2 id="result-title" class="font-title text-2xl mt-2 text-white leading-snug"></h2>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div id="result-body" class="bg-[#FFFCF5] p-5 rounded-xl border border-[#F0E6D2] text-sm leading-relaxed text-justify text-[#5D4037]"></div>
+                    <div id="tarot-result-images" class="hidden grid grid-cols-3 gap-2"></div>
+                    <div id="premium-banner" class="bg-gradient-to-r from-[#FFFDE7] to-[#FFF59D] p-5 rounded-2xl text-center shadow-sm cursor-pointer hover:shadow-md transition border border-[#FFF176] group">
+                        <div class="flex items-center justify-center space-x-2 mb-1">
+                            <span class="text-lg">🎁</span>
+                            <p class="font-title text-[#FBC02D] text-lg group-hover:scale-105 transition-transform">2025 대운 리포트</p>
+                        </div>
+                        <p class="text-xs text-[#F9A825] mb-4">놓치면 후회할 당신의 행운 시기를 알려드려요.</p>
+                        <div class="w-full max-w-xs mx-auto space-y-2 mb-4">
+                            <input type="text" id="buyer-name" class="w-full input-field p-2 text-sm text-center" placeholder="이름">
+                            <input type="tel" id="buyer-phone" class="w-full input-field p-2 text-sm text-center" placeholder="연락처 (선택)">
+                        </div>
+                        <button id="requestPay-btn" class="bg-white text-[#F9A825] px-8 py-2.5 rounded-full text-xs font-bold shadow-sm group-hover:bg-[#F9A825] group-hover:text-white transition-colors">시크릿 리포트 열기 (3,000원)</button>
+                    </div>
+                    <div class="flex gap-3 pt-2">
+                        <button id="shareResult-btn" class="flex-1 bg-[#3E2723] text-white py-3.5 rounded-xl text-sm font-bold shadow-md hover:bg-[#5D4037] transition"><i class="fa-solid fa-share-nodes mr-2"></i>공유하기</button>
+                        <button id="retry-btn" class="flex-1 bg-white border border-[#D7CCC8] text-[#5D4037] py-3.5 rounded-xl text-sm font-bold hover:bg-[#EFEBE9] transition">처음으로</button>
+                    </div>
+                    <div id="ad-banner" class="mt-6 w-full h-24 bg-gray-200 flex items-center justify-center text-sm text-gray-500 rounded-lg">(광고 영역)</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="w-full py-8 text-center text-[#BCAAA4] text-[10px] bg-white border-t border-[#F0E6D2]">
+        <p class="mb-1 font-bold">Vibe Saju Team</p>
+        <p>&copy; 2025 Vibe Saju. All rights reserved.</p>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</body>
+</html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Saju | 귀엽고 깔끔한 운세</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 쿠키런 스타일의 생동감 있는 컬러 팔레트 */
+            --primary-red: #FF5E5E;
+            --primary-yellow: #FFD950;
+            --text-brown: #5D4037;
+            --bg-cream: #FFF9F0;
+            --card-white: #FFFFFF;
+            --border-beige: #E8DCC0;
+        }
+
+        body { 
+            font-family: 'Nanum Gothic', sans-serif; 
+            background-color: var(--bg-cream); 
+            color: var(--text-brown);
+            /* 땡땡이 제거하고 미세한 종이 질감 추가 (선택사항) */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+
+        .font-title { font-family: 'Jua', sans-serif; }
+
+        /* 3D 터치감 버튼 */
+        .btn-action {
+            background-color: var(--primary-red);
+            color: white;
+            border-radius: 20px;
+            border-bottom: 6px solid #D64545;
+            transition: all 0.1s;
+            font-family: 'Jua', sans-serif;
+        }
+        .btn-action:active {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+            margin-top: 4px;
+        }
+        
+        /* 카테고리 칩 버튼 */
+        .chip {
+            background-color: white;
+            border: 2px solid var(--border-beige);
+            color: #A1887F;
+            border-radius: 12px;
+            font-family: 'Jua', sans-serif;
+            transition: all 0.2s;
+            box-shadow: 0 2px 0 var(--border-beige);
+        }
+        .chip.active {
+            border-color: var(--primary-red);
+            color: var(--primary-red);
+            background-color: #FFF0F0;
+            box-shadow: 0 2px 0 var(--primary-red);
+            transform: translateY(-1px);
+        }
+
+        /* 메인 탭 */
+        .main-tab {
+            display: flex;
+            background: #EFE6D5;
+            padding: 6px;
+            border-radius: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .tab-btn {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            border-radius: 16px;
+            cursor: pointer;
+            font-family: 'Jua', sans-serif;
+            color: #A1887F;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tab-btn.active {
+            background: white;
+            color: var(--text-brown);
+            box-shadow: 0 4px 10px rgba(93, 64, 55, 0.1);
+            transform: scale(1.02);
+        }
+
+        /* 카드 컨테이너 */
+        .content-card {
+            background-color: var(--card-white);
+            border-radius: 24px;
+            box-shadow: 0 8px 24px rgba(93, 64, 55, 0.08);
+            border: 1px solid white;
+        }
+
+        /* 입력 폼 */
+        .input-field {
+            background-color: #FFFCF5;
+            border: 2px solid var(--border-beige);
+            border-radius: 14px;
+            color: var(--text-brown);
+            transition: all 0.3s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-yellow);
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(255, 217, 80, 0.2);
+        }
+
+        /* 타로 카드 애니메이션 */
+        .tarot-scene {
+            perspective: 1000px;
+            width: 100%;
+            aspect-ratio: 2/3.2;
+            cursor: pointer;
+        }
+        .tarot-obj {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-style: preserve-3d;
+        }
+        .tarot-scene.flipped .tarot-obj { transform: rotateY(180deg); }
+        .face {
+            position: absolute;
+            inset: 0;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .face-back {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+        }
+        .face-back::after { content: '★'; color: white; font-size: 2rem; opacity: 0.8; }
+        .face-front {
+            transform: rotateY(180deg);
+            background-color: white;
+            border: 3px solid var(--primary-yellow);
+            overflow: hidden;
+        }
+        .face-front img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 애니메이션 유틸 */
+        .fade-in { animation: fadeIn 0.6s ease-out forwards; opacity: 0; transform: translateY(15px); }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        
+        .spin { animation: spin 1.5s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center">
+
+    <!-- 상단 네비게이션 -->
+    <nav class="w-full py-4 px-6 flex justify-between items-center bg-white/80 backdrop-blur sticky top-0 z-50 border-b border-[#F0E6D2]">
+        <div class="font-title text-2xl text-[#FF5E5E] tracking-wide cursor-pointer flex items-center" onclick="location.reload()">
+            <i class="fa-solid fa-cookie-bite mr-2 text-[#FFD950]"></i>Vibe Saju
+        </div>
+        <div class="text-xs font-bold text-[#A1887F] bg-[#EFE6D5] px-3 py-1 rounded-full">
+            BETA
+        </div>
+    </nav>
+
+    <main class="w-full max-w-md px-5 pt-8 pb-32">
+        
+        <!-- 히어로 타이틀 -->
+        <header class="text-center mb-10 fade-in">
+            <p class="text-xs text-[#A1887F] font-bold mb-2 tracking-widest bg-white inline-block px-3 py-1 rounded-full shadow-sm">AI 운세 & 타로 분석</p>
+            <h2 class="font-title text-3xl text-[#4A321F] leading-tight">
+                당신의 오늘을<br><span class="text-[#FF5E5E]">달콤하게</span> 구워드릴게요!
+            </h2>
+        </header>
+
+        <!-- 메인 모드 탭 -->
+        <div class="main-tab mb-8 fade-in" style="animation-delay: 0.1s;">
+            <div onclick="setMode('saju')" id="tab-saju" class="tab-btn active text-lg">📜 정통 사주</div>
+            <div onclick="setMode('tarot')" id="tab-tarot" class="tab-btn text-lg">🔮 심층 타로</div>
+        </div>
+
+        <!-- ================= SAJU SECTION ================= -->
+        <section id="section-saju" class="space-y-6 fade-in" style="animation-delay: 0.2s;">
+            <!-- 사주 주제 선택 -->
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="setSajuType('total')" id="st-total" class="chip active py-3 text-sm">🍀 종합 운세</button>
+                <button onclick="setSajuType('love')" id="st-love" class="chip py-3 text-sm">💕 연애/애정</button>
+                <button onclick="setSajuType('wealth')" id="st-wealth" class="chip py-3 text-sm">💰 재물/성공</button>
+            </div>
+
+            <div class="content-card p-6 space-y-5">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-[#8D6E63] mb-1.5 pl-1">이름 (Name)</label>
+                        <input type="text" id="userName" class="w-full input-field p-3 text-base" placeholder="이름을 입력하세요">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-[#8D6E63] mb-1.5 pl-1">생년월일</label>
+                            <input type="date" id="userBirth" class="w-full input-field p-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#8D6E63] mb-1.5 pl-1">태어난 시간</label>
+                            <select id="userTime" class="w-full input-field p-3 text-sm cursor-pointer">
+                                <option value="unknown">모름</option>
+                                <option value="ja">자시 (23:30~)</option>
+                                <option value="chuk">축시 (01:30~)</option>
+                                <option value="in">인시 (03:30~)</option>
+                                <option value="myo">묘시 (05:30~)</option>
+                                <option value="jin">진시 (07:30~)</option>
+                                <option value="sa">사시 (09:30~)</option>
+                                <option value="o">오시 (11:30~)</option>
+                                <option value="mi">미시 (13:30~)</option>
+                                <option value="shin">신시 (15:30~)</option>
+                                <option value="yu">유시 (17:30~)</option>
+                                <option value="sul">술시 (19:30~)</option>
+                                <option value="hae">해시 (21:30~)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="calculateSaju()" class="w-full btn-action py-4 text-xl shadow-lg">
+                        사주 분석 시작하기 ✨
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAROT SECTION ================= -->
+        <section id="section-tarot" class="hidden space-y-6 fade-in" style="animation-delay: 0.2s;">
+            <!-- 타로 주제 선택 (리팩토링됨) -->
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="setTarotType('situation')" id="tt-situation" class="chip active py-3 text-sm">🤔 현재 고민</button>
+                <button onclick="setTarotType('choice')" id="tt-choice" class="chip py-3 text-sm">⚖️ 양자 택일</button>
+                <button onclick="setTarotType('future')" id="tt-future" class="chip py-3 text-sm">🚀 미래 흐름</button>
+            </div>
+
+            <!-- 인트로 화면 -->
+            <div id="tarot-intro" class="content-card p-8 text-center space-y-6">
+                <div class="w-24 h-24 bg-[#FFF0F0] rounded-full flex items-center justify-center mx-auto text-5xl shadow-inner">
+                    🔮
+                </div>
+                <div>
+                    <h3 class="font-title text-2xl text-[#4A321F] mb-3">카드가 답을 줄 거예요</h3>
+                    <p class="text-sm text-[#8D6E63] leading-relaxed">
+                        마음속으로 고민을 깊게 생각한 뒤,<br>
+                        아래 버튼을 눌러 카드를 섞어주세요.
+                    </p>
+                </div>
+                <button onclick="startShuffle()" class="w-full btn-action py-4 text-xl">
+                    카드 섞기 시작!
+                </button>
+            </div>
+
+            <!-- 셔플 화면 -->
+            <div id="tarot-shuffle" class="hidden text-center py-12 space-y-10">
+                <div class="text-7xl animate-bounce">🔀</div>
+                <h3 class="font-title text-2xl text-[#FF5E5E]">카드를 섞는 중...</h3>
+                <p class="text-sm text-[#8D6E63]">충분히 섞였다고 생각되면 멈춰주세요!</p>
+                <button onclick="stopShuffle()" class="w-full btn-action py-4 text-xl">STOP!</button>
+            </div>
+
+            <!-- 선택 화면 -->
+            <div id="tarot-select" class="hidden space-y-4">
+                <div class="text-center p-3 bg-white rounded-xl border border-[#F0E6D2] shadow-sm">
+                    <p class="text-xs font-bold text-[#FF5E5E]" id="pick-instruction">👇 순서대로 3장을 뽑아주세요</p>
+                </div>
+                <div class="grid grid-cols-3 gap-3" id="card-grid"></div>
+            </div>
+        </section>
+
+        <!-- ================= RESULT SECTION ================= -->
+        <div id="result-area" class="hidden mt-6 fade-in w-full">
+            <!-- 로딩 화면 -->
+            <div id="loading" class="py-20 flex flex-col items-center">
+                <div class="w-12 h-12 border-4 border-[#F0E6D2] border-t-[#FF5E5E] rounded-full spin mb-6"></div>
+                <p class="font-title text-xl text-[#8D6E63]">AI가 운명을 분석 중입니다...</p>
+                <p class="text-xs text-[#A1887F] mt-2">잠시만 기다려주세요 🍪</p>
+            </div>
+
+            <!-- 결과 카드 -->
+            <div id="result-content" class="hidden content-card p-0 relative overflow-hidden">
+                <div class="bg-[#FF5E5E] p-4 text-center">
+                    <span class="bg-white/20 text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">Analysis Complete</span>
+                    <h2 id="result-title" class="font-title text-2xl mt-2 text-white leading-snug"></h2>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <!-- 결과 본문 -->
+                    <div id="result-body" class="bg-[#FFFCF5] p-5 rounded-xl border border-[#F0E6D2] text-sm leading-relaxed text-justify text-[#5D4037]"></div>
+
+                    <!-- 타로 결과 이미지 (타로 모드일 때만 표시) -->
+                    <div id="tarot-result-images" class="hidden grid grid-cols-3 gap-2">
+                        <!-- JS로 이미지 주입 -->
+                    </div>
+
+                    <!-- 프리미엄 배너 (수익화) -->
+                    <div class="bg-gradient-to-r from-[#FFFDE7] to-[#FFF59D] p-5 rounded-2xl text-center shadow-sm cursor-pointer hover:shadow-md transition border border-[#FFF176] group">
+                        <div class="flex items-center justify-center space-x-2 mb-1">
+                            <span class="text-lg">🎁</span>
+                            <p class="font-title text-[#FBC02D] text-lg group-hover:scale-105 transition-transform">2025 대운 리포트</p>
+                        </div>
+                        <p class="text-xs text-[#F9A825] mb-4">놓치면 후회할 당신의 행운 시기를 알려드려요.</p>
+                        <button class="bg-white text-[#F9A825] px-8 py-2.5 rounded-full text-xs font-bold shadow-sm group-hover:bg-[#F9A825] group-hover:text-white transition-colors">
+                            시크릿 리포트 열기 (3,000원)
+                        </button>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button onclick="shareResult()" class="flex-1 bg-[#3E2723] text-white py-3.5 rounded-xl text-sm font-bold shadow-md hover:bg-[#5D4037] transition">
+                            <i class="fa-solid fa-share-nodes mr-2"></i>공유하기
+                        </button>
+                        <button onclick="location.reload()" class="flex-1 bg-white border border-[#D7CCC8] text-[#5D4037] py-3.5 rounded-xl text-sm font-bold hover:bg-[#EFEBE9] transition">
+                            처음으로
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full py-8 text-center text-[#BCAAA4] text-[10px] bg-white border-t border-[#F0E6D2]">
+        <p class="mb-1 font-bold">Vibe Saju Team</p>
+        <p>&copy; 2025 Vibe Saju. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // ================= 데이터베이스 =================
+        const STEMS = {
+            0: { name: "경금(庚金)", nature: "단단한 바위", desc: "굳은 의지와 결단력의 소유자! 맺고 끊음이 확실해요." },
+            1: { name: "신금(辛金)", nature: "반짝이는 보석", desc: "섬세하고 예리하며, 자신을 빛내는 능력이 탁월해요." },
+            2: { name: "임수(壬水)", nature: "넓은 바다", desc: "깊은 지혜와 포용력을 가졌어요. 유연함이 강점이에요." },
+            3: { name: "계수(癸水)", nature: "촉촉한 봄비", desc: "다정다감하고 아이디어가 넘쳐요. 섬세한 감성의 소유자!" },
+            4: { name: "갑목(甲木)", nature: "우직한 소나무", desc: "리더십이 강하고 굽히기 싫어하는 강직함이 있어요." },
+            5: { name: "을목(乙木)", nature: "강인한 덩굴", desc: "생활력이 강하고 끈기가 대단해요. 외유내강형!" },
+            6: { name: "병화(丙火)", nature: "타오르는 태양", desc: "열정적이고 솔직해요. 주변 사람들에게 에너지를 줘요." },
+            7: { name: "정화(丁火)", nature: "따스한 촛불", desc: "헌신적이고 따뜻해요. 내면에 뜨거운 열정을 품고 있죠." },
+            8: { name: "무토(戊土)", nature: "믿음직한 산", desc: "묵직하고 신용을 중시해요. 사람들이 많이 의지하는 편이에요." },
+            9: { name: "기토(己土)", nature: "비옥한 텃밭", desc: "실속 있고 다재다능해요. 누구와도 잘 어울리는 성격!" }
+        };
+
+        const TAROT_DECK = [
+            { name: "The Fool", img: "https://images.unsplash.com/photo-1614726365618-2c2621746200?w=300&q=80", key: "새로운 시작" },
+            { name: "The Magician", img: "https://images.unsplash.com/photo-1596727147705-54a9d0822607?w=300&q=80", key: "능력 발휘" },
+            { name: "The Lovers", img: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&q=80", key: "사랑과 선택" },
+            { name: "The Wheel", img: "https://images.unsplash.com/photo-1538370965046-79c0d6907d47?w=300&q=80", key: "운명의 변화" },
+            { name: "The Sun", img: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?w=300&q=80", key: "긍정적 에너지" },
+            { name: "Death", img: "https://images.unsplash.com/photo-1509024644558-2f56ce76c490?w=300&q=80", key: "끝과 시작" }
+        ];
+
+        // 상태 변수
+        let currentMode = 'saju';
+        let sajuType = 'total';
+        let tarotType = 'situation';
+        let selectedCards = [];
+
+        // ================= UI 로직 =================
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${mode}`).classList.add('active');
+
+            document.getElementById('section-saju').classList.add('hidden');
+            document.getElementById('section-tarot').classList.add('hidden');
+            document.getElementById('result-area').classList.add('hidden');
+            document.getElementById(`section-${mode}`).classList.remove('hidden');
+        }
+
+        function setSajuType(type) {
+            sajuType = type;
+            document.querySelectorAll('#section-saju .chip').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`st-${type}`).classList.add('active');
+        }
+
+        function setTarotType(type) {
+            tarotType = type;
+            document.querySelectorAll('#section-tarot .chip').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tt-${type}`).classList.add('active');
+        }
+
+        // ================= 사주 분석 로직 =================
+        function calculateSaju() {
+            const name = document.getElementById('userName').value;
+            const birth = document.getElementById('userBirth').value;
+            
+            if(!name || !birth) { alert("정확한 분석을 위해 이름과 생년월일을 입력해주세요!"); return; }
+
+            showLoading();
+
+            const year = parseInt(birth.split('-')[0]);
+            const stemIndex = (year - 4) % 10; 
+            const myStem = STEMS[stemIndex < 0 ? stemIndex + 10 : stemIndex];
+
+            setTimeout(() => {
+                let title = `"${myStem.name}"의 기운을 가진 ${name}님!`;
+                let content = `<p class="mb-4 text-[#8D6E63]"><strong>🌱 본질 분석:</strong><br>${myStem.desc}</p>`;
+
+                // 주제별 멘트 분기
+                if(sajuType === 'love') {
+                    content += `<p class="text-[#FF5E5E]"><strong>💖 애정운 흐름:</strong><br>올해는 당신의 매력이 자연스럽게 발산되는 시기입니다. 억지로 인연을 찾으려 하기보다, 당신이 좋아하는 일에 몰두할 때 빛나는 모습을 보고 누군가 다가올 확률이 높아요. 특히 ${year % 2 === 0 ? '여름' : '겨울'}에 만나는 인연을 주목하세요.</p>`;
+                } else if(sajuType === 'wealth') {
+                    content += `<p class="text-[#FBC02D]"><strong>💰 재물운 흐름:</strong><br>꾸준함이 답입니다. ${myStem.nature}의 기운을 가진 당신은 일확천금보다 쌓아가는 재물운이 강해요. 올해는 새로운 투자보다는 기존의 것을 지키고 불려나가는 전략이 유효합니다.</p>`;
+                } else {
+                    content += `<p class="text-[#5D4037]"><strong>🍀 종합 조언:</strong><br>주변 환경이 변화할 수 있지만, 당신의 타고난 뚝심으로 밀고 나가세요. 겉으로는 흔들려 보여도 뿌리는 깊게 박혀 있습니다.</p>`;
+                }
+
+                showResult(title, content, false);
+            }, 2000);
+        }
+
+        // ================= 타로 분석 로직 =================
+        function startShuffle() {
+            document.getElementById('tarot-intro').classList.add('hidden');
+            document.getElementById('tarot-shuffle').classList.remove('hidden');
+        }
+
+        function stopShuffle() {
+            document.getElementById('tarot-shuffle').classList.add('hidden');
+            const grid = document.getElementById('card-grid');
+            document.getElementById('tarot-select').classList.remove('hidden');
+            grid.innerHTML = '';
+            selectedCards = [];
+
+            // 카드 레이블 설정 (주제별)
+            let labels = ["과거", "현재", "미래"];
+            if (tarotType === 'choice') labels = ["선택 A", "선택 B", "조언"];
+            if (tarotType === 'future') labels = ["가까운 미래", "장애물", "최종 결과"];
+            
+            document.getElementById('pick-instruction').innerText = `👇 순서대로 뽑아주세요 (${labels.join(' ➔ ')})`;
+
+            for(let i=0; i<9; i++) {
+                const card = document.createElement('div');
+                card.className = 'tarot-scene';
+                card.innerHTML = `
+                    <div class="tarot-obj">
+                        <div class="face face-back"></div>
+                        <div class="face face-front"></div>
+                    </div>
+                `;
+                card.onclick = () => selectCard(card, i);
+                grid.appendChild(card);
+            }
+        }
+
+        function selectCard(el, idx) {
+            if(selectedCards.length >= 3 || el.classList.contains('flipped')) return;
+            el.classList.add('flipped');
+            selectedCards.push(idx);
+
+            if(selectedCards.length === 3) {
+                setTimeout(analyzeTarot, 1000);
+            }
+        }
+
+        function analyzeTarot() {
+            showLoading();
+            
+            // 카드 3장 랜덤 선택
+            const picks = [];
+            for(let i=0; i<3; i++) picks.push(TAROT_DECK[Math.floor(Math.random() * TAROT_DECK.length)]);
+
+            setTimeout(() => {
+                const title = tarotType === 'choice' ? "어떤 선택이 좋을까요?" : "당신의 흐름을 읽어보았습니다";
+                let labels = ["PAST (과거)", "PRESENT (현재)", "FUTURE (미래)"];
+                if (tarotType === 'choice') labels = ["OPTION A", "OPTION B", "ADVICE"];
+                if (tarotType === 'future') labels = ["NEAR FUTURE", "OBSTACLE", "OUTCOME"];
+
+                // 이미지 표시용 HTML 생성
+                const imagesHTML = picks.map(card => 
+                    `<div class="rounded-lg overflow-hidden border border-[#E0E0E0]"><img src="${card.img}" class="w-full h-24 object-cover"></div>`
+                ).join('');
+                document.getElementById('tarot-result-images').innerHTML = imagesHTML;
+                document.getElementById('tarot-result-images').classList.remove('hidden');
+
+                let content = `<div class="space-y-4">`;
+                picks.forEach((card, i) => {
+                    content += `
+                        <div class="border-l-4 ${i===0 ? 'border-[#FF6B6B]' : i===1 ? 'border-[#FFD93D]' : 'border-[#8B5A2B]'} pl-3">
+                            <span class="text-xs text-gray-400 font-bold block mb-1">${labels[i]}</span>
+                            <h4 class="font-bold text-[#333]">${card.name} - ${card.key}</h4>
+                            <p class="text-sm text-[#666] mt-1">이 카드는 당신에게 중요한 메시지를 던지고 있어요.</p>
+                        </div>
+                    `;
+                });
+                content += `</div>`;
+                
+                showResult(title, content, true);
+            }, 2500);
+        }
+
+        // ================= 공통 함수 =================
+        function showLoading() {
+            document.getElementById('section-saju').classList.add('hidden');
+            document.getElementById('section-tarot').classList.add('hidden');
+            document.getElementById('result-area').classList.remove('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('result-content').classList.add('hidden');
+        }
+
+        function showResult(title, content, isTarot) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('result-content').classList.remove('hidden');
+            document.getElementById('result-title').innerText = title;
+            document.getElementById('result-body').innerHTML = content;
+            
+            if(!isTarot) {
+                document.getElementById('tarot-result-images').classList.add('hidden');
+            }
+        }
+
+        function shareResult() {
+            if (navigator.share) {
+                navigator.share({ title: 'Vibe Saju', text: '내 운세 확인해볼래?', url: window.location.href });
+            } else {
+                alert("링크가 복사되었어요! 친구에게 공유해보세요 💌");
+            }
+        }
+    </script>
+</body>
+</html>
