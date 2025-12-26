@@ -1,5 +1,22 @@
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const admin = require('firebase-admin');
+
+// Firebase Admin SDK 초기화 (이미 초기화되지 않은 경우)
+if (!admin.apps.length) {
+  try {
+    // Vercel 환경 변수에서 서비스 계정 키를 가져옵니다.
+    // 이는 JSON 문자열 형태여야 합니다.
+    const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+  } catch (error) {
+    console.error("Firebase Admin SDK 초기화 실패:", error);
+  }
+}
+
+const db = admin.firestore();
 
 // Gemini API 키를 환경 변수에서 가져옵니다.
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -27,11 +44,32 @@ module.exports = async (req, res) => {
     // 마크다운 제거 (간단한 정규식)
     const cleanText = text.replace(/(\*\*|`|#+\s*)/g, "");
 
-    res.status(200).json({ result: cleanText });
+    // 서버에서 Firestore에 결과 저장
+    let docRef;
+    const dataToSave = {
+      uid: context.uid || null, // 클라이언트에서 uid를 전달할 경우 사용
+      type: mode,
+      rawText: cleanText, // AI 원본 결과 텍스트
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (mode === 'saju') {
+      dataToSave.sajuType = context.type;
+      dataToSave.userName = context.name; // 이름은 결과 텍스트에 포함되지만, 검색/필터링 용도로 DB에 저장 가능
+      dataToSave.dailyStem = context.dailyStem.name;
+    } else if (mode === 'tarot') {
+      dataToSave.tarotType = context.type;
+      // 카드 정보는 이미 클린 텍스트에 포함되어 있으므로, 필요한 경우만 저장
+      dataToSave.selectedCards = context.picks.map(card => ({ name: card.name, img: card.img, key: card.key }));
+    }
+
+    docRef = await db.collection("results").add(dataToSave);
+
+    res.status(200).json({ result: cleanText, resultId: docRef.id });
 
   } catch (error) {
-    console.error('Gemini API 호출 오류:', error);
-    res.status(500).json({ error: 'AI 결과 생성에 실패했습니다.' });
+    console.error('Gemini API 호출 또는 Firestore 저장 오류:', error);
+    res.status(500).json({ error: 'AI 결과 생성 및 저장에 실패했습니다.' });
   }
 }
 

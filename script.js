@@ -23,6 +23,8 @@ const App = (function () {
         tarotType: 'situation',
         selectedCards: [],
         lastSajuResult: null,
+        lastRawResult: null,
+        lastResultId: null, // 새로 추가된 부분
     };
 
     // ================= 3. DOM 요소 =================
@@ -67,41 +69,41 @@ const App = (function () {
         getPremiumTarotReport: (cards) => {
             return `<div class="space-y-4 text-left"><p><strong>✨ 종합 해석:</strong> 당신의 질문에 대한 카드의 흐름은 <strong>'${cards[0].key}'</strong>에서 시작하여, <strong>'${cards[1].key}'</strong>의 과정을 거쳐, 궁극적으로 <strong>'${cards[2].key}'</strong>의 결과로 나아감을 보여줍니다. 이는 과거의 경험이 현재의 도전을 만들고, 이를 극복하는 과정이 미래의 성취로 이어짐을 의미합니다.</p><hr class="my-4 border-gray-200"><div><h4 class="font-bold mb-2 text-lg text-center">세부 카드 분석</h4><div class="space-y-3"><p><strong>긍정적 측면:</strong> 당신은 <strong>'${cards[0].name}'</strong>의 지혜와 <strong>'${cards[2].name}'</strong>의 잠재력을 모두 가지고 있습니다. 이를 잘 활용하세요.</p><p><strong>주의할 점:</strong> 다만, <strong>'${cards[1].name}'</strong> 카드가 암시하는 현재의 장애물을 경계해야 합니다. ${cards[1].desc}</p></div></div></div>`;
         },
-        saveSajuResult: (sajuResult) => {
-            if (!state.currentUser) {
-                ui.showToast("로그인하면 결과를 저장하고 다시 볼 수 있어요!", "info");
-                return;
+        saveSajuResult: async (sajuResult) => {
+            try {
+                const docRef = await db.collection("results").add({
+                    uid: state.currentUser ? state.currentUser.uid : null,
+                    type: 'saju',
+                    sajuType: state.sajuType,
+                    result: {
+                        dailyStem: sajuResult.dailyStem.name,
+                    },
+                    rawText: sajuResult.rawText, // 전체 결과 텍스트 저장
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                return docRef.id;
+            } catch (err) {
+                console.error("Error saving saju result: ", err);
+                return null;
             }
-            db.collection("results").add({
-                uid: state.currentUser.uid,
-                type: 'saju',
-                sajuType: state.sajuType,
-                result: {
-                    name: dom.userName.value,
-                    birth: dom.userBirth.value,
-                    dailyStem: sajuResult.dailyStem.name,
-                },
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => ui.showToast("운세 결과가 저장되었습니다."))
-            .catch(err => console.error("Error saving result: ", err));
         },
-        saveTarotResult: (cards) => {
-            if (!state.currentUser) {
-                ui.showToast("로그인하면 결과를 저장하고 다시 볼 수 있어요!", "info");
-                return;
+        saveTarotResult: async (cards, rawText) => {
+            try {
+                const docRef = await db.collection("results").add({
+                    uid: state.currentUser ? state.currentUser.uid : null,
+                    type: 'tarot',
+                    tarotType: state.tarotType,
+                    result: {
+                        cards: cards.map(c => ({ name: c.name, img: c.img, key: c.key })),
+                    },
+                    rawText: rawText, // 전체 결과 텍스트 저장
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                return docRef.id;
+            } catch (err) {
+                console.error("Error saving tarot result: ", err);
+                return null;
             }
-            db.collection("results").add({
-                uid: state.currentUser.uid,
-                type: 'tarot',
-                tarotType: state.tarotType,
-                result: {
-                    cards: cards.map(c => c.name),
-                },
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => ui.showToast("운세 결과가 저장되었습니다."))
-            .catch(err => console.error("Error saving result: ", err));
         },
         loadMyResults: async () => {
             if (!state.currentUser) return [];
@@ -377,8 +379,12 @@ const App = (function () {
                 const data = await response.json();
                 const title = `"${myDailyStem.name}"의 기운을 가진 ${name}님!`;
                 
+                state.lastRawResult = data.result; // 원본 결과 저장
+                state.lastSajuResult.rawText = data.result; // 상세 정보도 저장
+                state.lastResultId = data.resultId; // 서버에서 받아온 resultId 저장
+
                 ui.parseAndDisplayStructuredResult(title, data.result, false);
-                logic.saveSajuResult(state.lastSajuResult);
+                // logic.saveSajuResult(state.lastSajuResult); // 공유 시 저장으로 변경
 
             } catch (error) {
                 console.error("Saju AI 분석 실패:", error);
@@ -428,10 +434,13 @@ const App = (function () {
                 const data = await response.json();
                 const title = "AI가 해석한 당신의 카드";
                 
+                state.lastRawResult = data.result; // 원본 결과 저장
+                state.lastResultId = data.resultId; // 서버에서 받아온 resultId 저장
+
                 dom.tarotResultImages.innerHTML = state.selectedCards.map(card => `<div class="rounded-lg overflow-hidden border border-[#E0E0E0]"><img src="${card.img}" class="w-full"></div>`).join('');
                 
                 ui.parseAndDisplayStructuredResult(title, data.result, true);
-                logic.saveTarotResult(state.selectedCards);
+                // logic.saveTarotResult(state.selectedCards, data.result); // 공유 시 저장으로 변경
 
             } catch (error) {
                 console.error("Tarot AI 분석 실패:", error);
@@ -440,30 +449,42 @@ const App = (function () {
             }
         },
         onShareResult: async () => {
+            console.log("onShareResult: Fired.");
             const originalButtonText = dom.shareResultBtn.innerHTML;
-            dom.shareResultBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 이미지 생성중...';
+            dom.shareResultBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 링크 생성중...';
             dom.shareResultBtn.disabled = true;
+
             try {
-                const canvas = await html2canvas(dom.resultContent, { useCORS: true, scale: 2 });
-                canvas.toBlob(async (blob) => {
-                    if (navigator.canShare && navigator.canShare({ files: [new File([blob], 'result.png', { type: 'image/png' })] })) {
-                        await navigator.share({ title: 'Vibe Saju & Tarot 결과', text: 'AI가 분석해준 내 운세 결과를 확인해보세요!', files: [new File([blob], 'result.png', { type: 'image/png' })] });
-                    } else {
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(blob);
-                        try {
-                            await navigator.clipboard.writeText(window.location.href);
-                            ui.showToast('이미지 다운로드 시작! 페이지 링크가 복사되었어요.');
-                        } catch (err) { ui.showToast('결과 이미지를 다운로드합니다.'); }
-                        link.download = 'vibe-saju-result.png';
-                        link.click();
-                    }
-                    dom.shareResultBtn.innerHTML = originalButtonText;
-                    dom.shareResultBtn.disabled = false;
-                }, 'image/png');
+                const resultId = state.lastResultId;
+                console.log("onShareResult: Retrieved result ID from state:", resultId);
+
+                if (!resultId) {
+                    throw new Error("공유할 결과 ID를 찾을 수 없습니다. 먼저 운세를 확인해주세요.");
+                }
+
+                const shareUrl = `${window.location.origin}/result.html?id=${resultId}`;
+                const shareTitle = 'AI 쿼카 운세 결과';
+                const shareText = 'AI가 분석해준 내 운세 결과를 확인해보세요!';
+
+                if (navigator.share) {
+                    console.log("onShareResult: Using navigator.share().");
+                    await navigator.share({
+                        title: shareTitle,
+                        text: shareText,
+                        url: shareUrl,
+                    });
+                    ui.showToast('공유 링크를 전송했어요!');
+                } else {
+                    console.log("onShareResult: Using clipboard.writeText().");
+                    await navigator.clipboard.writeText(shareUrl);
+                    ui.showToast('공유 링크가 클립보드에 복사되었어요!');
+                }
+
             } catch (error) {
-                console.error('이미지 생성 오류:', error);
-                ui.showToast('이미지 생성에 실패했어요. 잠시 후 다시 시도해주세요.', 'error');
+                console.error('Share error:', error);
+                ui.showToast(error.message || '공유에 실패했어요. 다시 시도해주세요.', 'error');
+            } finally {
+                console.log("onShareResult: Finally block reached. Resetting button.");
                 dom.shareResultBtn.innerHTML = originalButtonText;
                 dom.shareResultBtn.disabled = false;
             }

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿼카 운세 | 결과 확인</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Open Graph Meta Tags for social sharing -->
+    <meta property="og:title" content="쿼카 운세 결과">
+    <meta property="og:description" content="AI가 분석해준 당신의 운세 결과를 확인해보세요!">
+    <meta property="og:image" content="https://quokka-tarot.vercel.app/images/og-image.png">
+    <meta property="og:url" content="https://quokka-tarot.vercel.app">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KM09BXJ5F5"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-KM09BXJ5F5');
+    </script>
+</head>
+<body class="min-h-screen flex flex-col items-center">
+
+    <nav class="w-full py-4 px-6 flex justify-between items-center bg-white/80 backdrop-blur sticky top-0 z-50 border-b border-[#F0E6D2]">
+        <div id="logo" class="font-title text-2xl text-[#FF5E5E] tracking-wide cursor-pointer flex items-center">
+            <a href="/"><i class="fa-solid fa-leaf mr-2 text-[#81C784]"></i>쿼카 운세</a>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="go-home-btn" class="bg-white text-sm text-[#FF5E5E] font-bold py-2 px-4 rounded-full border-2 border-[#FF5E5E] hover:bg-[#FFF0F0] transition">
+                <a href="/">나도 해보기</a>
+            </button>
+        </div>
+    </nav>
+
+    <main class="w-full max-w-md px-4 sm:px-5 pt-8 pb-32">
+        <section id="result-area" class="mt-6 fade-in w-full">
+            <div id="loading" class="py-20 flex flex-col items-center">
+                <div class="w-12 h-12 border-4 border-[#F0E6D2] border-t-[#FF5E5E] rounded-full spin mb-6"></div>
+                <p class="font-title text-xl text-[#8D6E63]">운세 결과를 가져오고 있어요!</p>
+            </div>
+            <div id="result-content" class="hidden content-card p-0 relative overflow-hidden">
+                 <div class="bg-[#FF5E5E] p-4 text-center">
+                    <span class="bg-white/20 text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">Analysis Complete</span>
+                    <h2 id="result-title" class="font-title text-2xl mt-2 text-white leading-snug"></h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div id="result-summary" class="text-center text-lg leading-relaxed text-[#5D4037]"></div>
+                    <div id="tarot-result-images" class="hidden grid grid-cols-3 gap-2"></div>
+                    <div id="result-details" class="space-y-4">
+                        <!-- 상세 분석 내용이 여기에 동적으로 채워집니다. -->
+                    </div>
+                </div>
+            </div>
+             <div id="error-message" class="hidden text-center py-20">
+                <p class="text-2xl mb-4">😢</p>
+                <p class="font-title text-xl text-red-500">결과를 불러오지 못했습니다.</p>
+                <p class="text-sm text-gray-500 mt-2">존재하지 않거나 삭제된 결과입니다.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="w-full py-8 text-center text-[#BCAAA4] text-[10px] bg-white border-t border-[#F0E6D2]">
+        <p class="mb-1 font-bold">Quokka Fortune</p>
+        <p>&copy; 2025 Quokka Fortune. All rights reserved.</p>
+    </footer>
+
+    <!-- Firebase SDK (v9 Modular) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- App's Logic -->
+    <script src="config.js"></script>
+    <script src="data.js"></script>
+    <script src="result.js"></script>
+</body>
+</html>
