@@ -1,6 +1,8 @@
 @echo off
-echo Starting Live Server for Vibe Saju...
-echo You can access the site at http://127.0.0.1:8080 (the port might be different if 8080 is in use).
+echo Starting Vercel Development Server for Vibe Saju...
+echo This will run your frontend and backend API functions locally.
+echo You can access the site at the URL provided by Vercel CLI (usually http://localhost:3000).
 echo Press CTRL+C to stop the server.
 
-npx live-server
+call vercel dev
+PAUSE

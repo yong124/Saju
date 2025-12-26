@@ -84,6 +84,20 @@
             border: 1px solid white;
         }
 
+        #result-body {
+            white-space: pre-wrap; /* AI 응답의 줄바꿈을 그대로 표시 */
+            line-height: 1.7;      /* 긴 글의 가독성을 위한 줄 간격 확보 */
+        }
+
+        #result-details .detail-heading {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.1rem;
+            color: var(--primary-red);
+            padding-top: 1rem;
+            margin-top: 1rem;
+            border-top: 1px dashed var(--border-beige);
+        }
+
         /* 입력 폼 */
         .input-field {
             background-color: #FFFCF5;
@@ -178,6 +192,7 @@
 
 .toast.success { background-color: #4CAF50; }
 .toast.error { background-color: #F44336; }
+.toast.info { background-color: #2196F3; }
 
 .toast.fade-out {
     animation: toast-out 0.5s ease-out forwards;
@@ -199,6 +214,21 @@
             0% { transform: scale(1); }
             50% { transform: scale(0.95); }
             100% { transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+        }
+
+        #read-more-btn {
+            animation: pulse 2.5s infinite cubic-bezier(0.4, 0, 0.6, 1);
         }
 
 @media (max-width: 375px) {

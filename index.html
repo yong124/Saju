@@ -3,32 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibe Saju | 귀엽고 깔끔한 운세</title>
+    <title>쿼카 운세 | 세상에서 가장 긍정적인 운세</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     
-    <!-- PortOne (I'mport) Payment SDK -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-    <script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js" type="text/javascript"></script>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- App Scripts -->
-    <script src="config.js"></script>
-    <script src="data.js"></script>
-    <script src="script.js" defer></script>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KM09BXJ5F5"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      // config.js에 있는 googleAnalyticsId 값을 실제로 사용하려면,
+      // 이 스크립트를 동적으로 생성하거나, 서버에서 렌더링 시 값을 주입해야 합니다.
+      // 지금은 플레이스홀더를 사용합니다.
+      gtag('config', 'G-KM09BXJ5F5');
+    </script>
 </head>
 <body class="min-h-screen flex flex-col items-center">
 
     <nav class="w-full py-4 px-6 flex justify-between items-center bg-white/80 backdrop-blur sticky top-0 z-50 border-b border-[#F0E6D2]">
         <div id="logo" class="font-title text-2xl text-[#FF5E5E] tracking-wide cursor-pointer flex items-center">
-            <i class="fa-solid fa-cookie-bite mr-2 text-[#FFD950]"></i>Vibe Saju
+            <i class="fa-solid fa-leaf mr-2 text-[#81C784]"></i>쿼카 운세
         </div>
         <div class="flex items-center gap-2">
             <button id="my-results-btn" class="hidden bg-white text-sm text-gray-600 font-bold py-2 px-4 rounded-full border-2 border-gray-300 hover:bg-gray-100 transition">
@@ -45,13 +43,13 @@
         <header class="text-center mb-10 fade-in">
             <p class="text-xs text-[#A1887F] font-bold mb-2 tracking-widest bg-white inline-block px-3 py-1 rounded-full shadow-sm">AI 운세 & 타로 분석</p>
             <h2 class="font-title text-3xl text-[#4A321F] leading-tight">
-                당신의 오늘을<br><span class="text-[#FF5E5E]">달콤하게</span> 구워드릴게요!
+                쿼카가 당신의 하루를<br><span class="text-[#FF5E5E]">행복으로</span> 채워줄게요!
             </h2>
         </header>
 
         <div class="main-tab mb-8 fade-in" style="animation-delay: 0.1s;">
-            <div id="tab-saju" class="tab-btn active text-lg" data-mode="saju">📜 정통 사주</div>
-            <div id="tab-tarot" class="tab-btn text-lg" data-mode="tarot">🔮 심층 타로</div>
+            <div id="tab-saju" class="tab-btn active text-lg" data-mode="saju">🍀 행운 사주</div>
+            <div id="tab-tarot" class="tab-btn text-lg" data-mode="tarot">🌿 쿼카 타로</div>
         </div>
 
         <section id="section-saju" class="space-y-6 fade-in" style="animation-delay: 0.2s;">
@@ -121,28 +119,35 @@
                 <div class="text-center p-3 bg-white rounded-xl border border-[#F0E6D2] shadow-sm">
                     <p class="text-xs font-bold text-[#FF5E5E]" id="pick-instruction">👇 순서대로 3장을 뽑아주세요</p>
                 </div>
-                <div class="grid grid-cols-3 gap-3" id="card-grid"></div>
+                <div class="grid grid-cols-2 gap-4" id="card-grid"></div>
             </div>
         </section>
 
         <section id="result-area" class="hidden mt-6 fade-in w-full">
             <div id="loading" class="py-20 flex flex-col items-center">
                 <div class="w-12 h-12 border-4 border-[#F0E6D2] border-t-[#FF5E5E] rounded-full spin mb-6"></div>
-                <p class="font-title text-xl text-[#8D6E63]">AI가 운명을 분석 중입니다...</p>
-                <p class="text-xs text-[#A1887F] mt-2">잠시만 기다려주세요 🍪</p>
+                <p class="font-title text-xl text-[#8D6E63]">쿼카가 운세 결과를 가져오고 있어요!</p>
+                <p class="text-xs text-[#A1887F] mt-2">조금만 기다려줘쿼! 🐿️</p>
             </div>
             <div id="result-content" class="hidden content-card p-0 relative overflow-hidden">
                 <div class="bg-[#FF5E5E] p-4 text-center">
                     <span class="bg-white/20 text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">Analysis Complete</span>
                     <h2 id="result-title" class="font-title text-2xl mt-2 text-white leading-snug"></h2>
                 </div>
-                <div class="p-6 space-y-6">
-                    <div id="result-body" class="bg-[#FFFCF5] p-5 rounded-xl border border-[#F0E6D2] text-sm leading-relaxed text-justify text-[#5D4037]"></div>
+                <div class="p-6 space-y-4">
+                    <div id="result-summary" class="text-center text-lg leading-relaxed text-[#5D4037]"></div>
                     <div id="tarot-result-images" class="hidden grid grid-cols-3 gap-2"></div>
-                    <div id="premium-banner" class="bg-gradient-to-r from-[#FFFDE7] to-[#FFF59D] p-5 rounded-2xl text-center shadow-sm cursor-pointer hover:shadow-md transition border border-[#FFF176] group">
+                    
+                    <div id="result-details" class="hidden space-y-4">
+                        <!-- 상세 분석 내용이 여기에 동적으로 채워집니다. -->
+                    </div>
+
+                    <button id="read-more-btn" class="w-full bg-white border border-[#D7CCC8] text-[#5D4037] py-2.5 rounded-lg text-sm font-bold hover:bg-[#EFEBE9] transition">👇 쿼카가 더 알려줄게! 👇</button>
+                    
+                    <div id="premium-banner" class="bg-gradient-to-r from-[#FFFDE7] to-[#FFF59D] p-5 rounded-2xl text-center shadow-sm cursor-pointer hover:shadow-md transition border border-[#FFF176] group !mt-6">
                         <div class="flex items-center justify-center space-x-2 mb-1">
                             <span class="text-lg">🎁</span>
-                            <p class="font-title text-[#FBC02D] text-lg group-hover:scale-105 transition-transform">2025 대운 리포트</p>
+                            <p class="font-title text-[#FBC02D] text-lg group-hover:scale-105 transition-transform">쿼카 운세 시크릿 리포트</p>
                         </div>
                         <p class="text-xs text-[#F9A825] mb-4">놓치면 후회할 당신의 행운 시기를 알려드려요.</p>
                         <div class="w-full max-w-xs mx-auto space-y-2 mb-4">
@@ -172,9 +177,22 @@
     </main>
 
     <footer class="w-full py-8 text-center text-[#BCAAA4] text-[10px] bg-white border-t border-[#F0E6D2]">
-        <p class="mb-1 font-bold">Vibe Saju Team</p>
-        <p>&copy; 2025 Vibe Saju. All rights reserved.</p>
+        <p class="mb-1 font-bold">Quokka Fortune</p>
+        <p>&copy; 2025 Quokka Fortune. All rights reserved.</p>
     </footer>
 
+    <!-- PortOne(아임포트) SDK -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js" type="text/javascript"></script>
+    
+    <!-- Firebase SDK (v9 Modular) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- App's Logic -->
+    <script src="config.js"></script>
+    <script src="data.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
