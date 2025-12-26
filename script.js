@@ -119,22 +119,6 @@ const App = (function () {
                 ui.showToast('과거 운세 정보를 불러오는 데 실패했습니다.', 'error');
                 return [];
             }
-        },
-        loadMyResults: async () => {
-            if (!state.currentUser) return [];
-            try {
-                const snapshot = await db.collection("results")
-                    .where("uid", "==", state.currentUser.uid)
-                    .orderBy("createdAt", "desc")
-                    .limit(10)
-                    .get();
-                
-                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            } catch (err) {
-                console.error("Error loading results: ", err);
-                ui.showToast('과거 운세 정보를 불러오는 데 실패했습니다.', 'error');
-                return [];
-            }
         }
     };
 
@@ -166,12 +150,12 @@ const App = (function () {
                 if (r.type === 'saju') {
                     title = `[사주] ${r.result.dailyStem}`;
                 } else {
-                    title = `[타로] ${r.result.cards[1]}`; // 현재 카드
+                    title = `[타로] ${r.result.cards[1]}`;
                 }
                 return `
-                    <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50" data-result-id="${r.id}">
                         <p class="text-xs text-gray-400">${date}</p>
-                        <p class="font-bold">${title}</p>
+                        <p class="font-bold pointer-events-none">${title}</p>
                     </div>
                 `;
             }).join('');
@@ -215,12 +199,10 @@ const App = (function () {
             state.currentMode = mode;
             dom.tabSaju.classList.toggle('active', mode === 'saju');
             dom.tabTarot.classList.toggle('active', mode === 'tarot');
-            dom.sajuSection.classList.remove('hidden'); // Reset to show saju
+            dom.sajuSection.classList.add('hidden');
             dom.tarotSection.classList.add('hidden');
             dom.resultArea.classList.add('hidden');
             dom.myResultsSection.classList.add('hidden');
-            if(mode !== 'saju') dom.sajuSection.classList.add('hidden');
-            if(mode !== 'tarot') dom.tarotSection.classList.add('hidden');
             dom[mode + 'Section'].classList.remove('hidden');
         },
         setSajuType: (type) => {
@@ -436,15 +418,27 @@ const App = (function () {
             myResultsSection: document.getElementById('my-results-section'),
             myResultsList: document.getElementById('my-results-list'),
             logo: document.getElementById('logo'), sajuSection: document.getElementById('section-saju'),
-//... (중간 생략)
+            tarotSection: document.getElementById('section-tarot'), resultArea: document.getElementById('result-area'),
+            loading: document.getElementById('loading'), resultContent: document.getElementById('result-content'),
+            resultTitle: document.getElementById('result-title'), resultBody: document.getElementById('result-body'),
+            tarotResultImages: document.getElementById('tarot-result-images'), userName: document.getElementById('userName'),
+            userBirth: document.getElementById('userBirth'), tarotIntro: document.getElementById('tarot-intro'),
+            tarotShuffle: document.getElementById('tarot-shuffle'), tarotSelect: document.getElementById('tarot-select'),
+            cardGrid: document.getElementById('card-grid'), pickInstruction: document.getElementById('pick-instruction'),
+            buyerName: document.getElementById('buyer-name'), buyerPhone: document.getElementById('buyer-phone'),
+            tabSaju: document.getElementById('tab-saju'), tabTarot: document.getElementById('tab-tarot'),
+            sajuOptions: document.getElementById('saju-options'), tarotOptions: document.getElementById('tarot-options'),
+            calculateSajuBtn: document.getElementById('calculateSaju-btn'), startShuffleBtn: document.getElementById('startShuffle-btn'),
+            stopShuffleBtn: document.getElementById('stopShuffle-btn'), requestPayBtn: document.getElementById('requestPay-btn'),
+            shareResultBtn: document.getElementById('shareResult-btn'), retryBtn: document.getElementById('retry-btn'),
+            premiumBanner: document.getElementById('premium-banner'),
+            adBanner: document.getElementById('ad-banner'),
+        });
+
         dom.loginBtn.addEventListener('click', handlers.onAuthClick);
         dom.myResultsBtn.addEventListener('click', handlers.onShowMyResults);
-        dom.logo.addEventListener('click', () => {
-            ui.setMode('saju'); // 로고 클릭 시 메인 화면으로
-        });
-        dom.retryBtn.addEventListener('click', () => {
-            ui.setMode(state.currentMode); // 처음으로 버튼 클릭 시 현재 탭의 처음으로
-        });
+        dom.logo.addEventListener('click', () => ui.setMode('saju'));
+        dom.retryBtn.addEventListener('click', () => ui.setMode(state.currentMode));
         dom.tabSaju.addEventListener('click', () => ui.setMode('saju'));
         dom.tabTarot.addEventListener('click', () => ui.setMode('tarot'));
         dom.sajuOptions.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') ui.setSajuType(e.target.dataset.sajuType); });
